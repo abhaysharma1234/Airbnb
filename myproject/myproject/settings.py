@@ -30,7 +30,7 @@ DEBUG = True
 ALLOWED_HOSTS = ['*']
 
 CSRF_TRUSTED_ORIGINS = [
-    "https://airbnb-d0fc.onrender.com"
+    "https://*.onrender.com"
 ]
 
 
