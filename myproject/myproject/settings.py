@@ -27,6 +27,10 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
+CSRF_TRUSTED_ORIGINS = [
+    "https://airbnb-d0fc.onrender.com"
+]
+
 
 # Application definition
 
