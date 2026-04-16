@@ -1,0 +1,66 @@
+{% extends 'airbnb/base.html' %}
+
+{% block title %}My Bookings - Airbnb Clone{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <h1 class="mb-4">My Bookings</h1>
+
+    {% if bookings %}
+        <div class="row">
+            {% for booking in bookings %}
+                <div class="col-md-6 mb-4">
+                    <div class="card shadow">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    {% if booking.property.image %}
+                                        <img src="{{ booking.property.image.url }}" class="img-fluid rounded" alt="{{ booking.property.title }}">
+                                    {% else %}
+                                        <img src="https://picsum.photos/seed/{{ booking.property.pk }}/200/150.jpg" class="img-fluid rounded" alt="{{ booking.property.title }}">
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-8">
+                                    <h5>{{ booking.property.title }}</h5>
+                                    <p class="text-muted mb-2">
+                                        <i class="fas fa-map-marker-alt"></i> {{ booking.property.city }}, {{ booking.property.country }}
+                                    </p>
+                                    <div class="mb-2">
+                                        <span class="badge bg-secondary">{{ booking.property.get_property_type_display }}</span>
+                                        <span class="badge {% if booking.status == 'confirmed' %}bg-success{% elif booking.status == 'pending' %}bg-warning{% elif booking.status == 'cancelled' %}bg-danger{% else %}bg-info{% endif %}">
+                                            {{ booking.get_status_display }}
+                                        </span>
+                                    </div>
+                                    <p class="mb-2">
+                                        <strong>Check-in:</strong> {{ booking.check_in|date:"M d, Y" }}<br>
+                                        <strong>Check-out:</strong> {{ booking.check_out|date:"M d, Y" }}
+                                    </p>
+                                    <p class="mb-2">
+                                        <strong>Total Price:</strong> ${{ booking.total_price }}
+                                    </p>
+                                    <p class="mb-0">
+                                        <small class="text-muted">Booked on {{ booking.created_at|date:"M d, Y" }}</small>
+                                    </p>
+                                    <div class="mt-3">
+                                        <a href="{% url 'property_detail' booking.property.pk %}" class="btn btn-outline-primary btn-sm">View Property</a>
+                                        {% if booking.status == 'completed' and not booking.review_set.exists %}
+                                            <a href="{% url 'add_review' booking.property.pk %}" class="btn btn-outline-warning btn-sm">Add Review</a>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-calendar-check fa-4x text-muted mb-3"></i>
+            <h3 class="text-muted">You haven't made any bookings yet</h3>
+            <p class="text-muted">Start exploring properties and book your next stay!</p>
+            <a href="{% url 'property_list' %}" class="btn btn-danger btn-lg">Browse Properties</a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

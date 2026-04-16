@@ -1,0 +1,160 @@
+{% extends 'airbnb/base.html' %}
+
+{% block title %}Book Property - Airbnb Clone{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-body">
+                    <h2 class="mb-4">Book {{ property.title }}</h2>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            {% if property.image %}
+                                <img src="{{ property.image.url }}" class="img-fluid rounded" alt="{{ property.title }}">
+                            {% else %}
+                                <img src="https://picsum.photos/seed/{{ property.pk }}/400/300.jpg" class="img-fluid rounded" alt="{{ property.title }}">
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <h4>{{ property.title }}</h4>
+                            <p class="text-muted">
+                                <i class="fas fa-map-marker-alt"></i> {{ property.address }}, {{ property.city }}
+                            </p>
+                            <div class="mb-3">
+                                <span class="badge bg-secondary">{{ property.get_property_type_display }}</span>
+                                <span class="badge bg-info">{{ property.bedrooms }} beds</span>
+                                <span class="badge bg-info">{{ property.bathrooms }} baths</span>
+                                <span class="badge bg-info">{{ property.max_guests }} max guests</span>
+                            </div>
+                            <p>{{ property.description|truncatewords:30 }}</p>
+                            <h4 class="text-danger">${{ property.price_per_night }}/night</h4>
+                        </div>
+                    </div>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.check_in.id_for_label }}" class="form-label">Check-in Date</label>
+                                {{ form.check_in }}
+                                {% if form.check_in.errors %}
+                                    <div class="text-danger">
+                                        {{ form.check_in.errors }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.check_out.id_for_label }}" class="form-label">Check-out Date</label>
+                                {{ form.check_out }}
+                                {% if form.check_out.errors %}
+                                    <div class="text-danger">
+                                        {{ form.check_out.errors }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i>
+                            <strong>Note:</strong> Your booking request will be sent to the host for confirmation.
+                        </div>
+                        
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-danger">Request Booking</button>
+                            <a href="{% url 'property_detail' property.pk %}" class="btn btn-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card shadow">
+                <div class="card-body">
+                    <h5 class="card-title">Booking Summary</h5>
+                    <div id="booking-summary" data-price="{{ property.price_per_night }}">
+                        <p class="text-muted">Select dates to see pricing</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card shadow mt-3">
+                <div class="card-body">
+                    <h5 class="card-title">Host Information</h5>
+                    <p class="mb-0"><strong>{{ property.host.username }}</strong></p>
+                    <small class="text-muted">Member since {{ property.host.date_joined|date:"M Y" }}</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<style>
+.form-control {
+    border-radius: 8px;
+    padding: 12px;
+    border: 1px solid #ddd;
+}
+.form-control:focus {
+    border-color: #dc3545;
+    box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+}
+</style>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const checkInInput = document.querySelector('input[name="check_in"]');
+    const checkOutInput = document.querySelector('input[name="check_out"]');
+    const summaryDiv = document.getElementById('booking-summary');
+    const pricePerNight = parseFloat(summaryDiv.getAttribute('data-price'));
+    
+    function updateSummary() {
+        if (checkInInput.value && checkOutInput.value) {
+            const checkIn = new Date(checkInInput.value);
+            const checkOut = new Date(checkOutInput.value);
+            const nights = Math.ceil((checkOut - checkIn) / (1000 * 60 * 60 * 24));
+            
+            if (nights > 0) {
+                const totalPrice = nights * pricePerNight;
+                summaryDiv.innerHTML = `
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>${{ pricePerNight }} x ${nights} nights</span>
+                        <span>$${ totalPrice.toFixed(2) }</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Service fee</span>
+                        <span>$${ (totalPrice * 0.1).toFixed(2) }</span>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between fw-bold">
+                        <span>Total</span>
+                        <span>$${ (totalPrice * 1.1).toFixed(2) }</span>
+                    </div>
+                `;
+            } else {
+                summaryDiv.innerHTML = '<p class="text-muted">Check-out must be after check-in</p>';
+            }
+        } else {
+            summaryDiv.innerHTML = '<p class="text-muted">Select dates to see pricing</p>';
+        }
+    }
+    
+    checkInInput.addEventListener('change', updateSummary);
+    checkOutInput.addEventListener('change', updateSummary);
+    
+    // Set minimum date to today
+    const today = new Date().toISOString().split('T')[0];
+    checkInInput.setAttribute('min', today);
+    checkOutInput.setAttribute('min', today);
+    
+    // Update check-out minimum when check-in changes
+    checkInInput.addEventListener('change', function() {
+        checkOutInput.setAttribute('min', this.value);
+    });
+});
+</script>
+{% endblock %}

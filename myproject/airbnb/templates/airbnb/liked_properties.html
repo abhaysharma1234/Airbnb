@@ -1,0 +1,151 @@
+{% extends 'airbnb/base.html' %}
+
+{% block title %}My Liked Properties - Airbnb Clone{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="mb-0">My Liked Properties</h1>
+        {% if is_host %}
+            <a href="{% url 'host_liked_properties' %}" class="btn btn-outline-primary">View Host Dashboard</a>
+        {% endif %}
+    </div>
+
+    {% if liked_properties %}
+        <!-- Host Statistics -->
+        {% if is_host %}
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="card bg-light">
+                        <div class="card-body text-center">
+                            <h4 class="text-primary">{{ liked_properties.count }}</h4>
+                            <p class="mb-0">Your Likes</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-light">
+                        <div class="card-body text-center">
+                            <h4 class="text-success">{{ host_properties.count }}</h4>
+                            <p class="mb-0">Your Properties</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-light">
+                        <div class="card-body text-center">
+                            <h4 class="text-warning">
+                                {% if host_properties.count > 0 %}
+                                    {% widthratio liked_properties.count host_properties.count 1 %}%
+                                {% else %}
+                                    0
+                                {% endif %}
+                            </h4>
+                            <p class="mb-0">Avg Likes/Property</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        <!-- Properties Grid -->
+        <div class="row">
+            {% for property in liked_properties %}
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card property-card h-100">
+                        <div class="position-relative">
+                            {% if property.image %}
+                                <img src="{{ property.image.url }}" class="card-img-top property-image" alt="{{ property.title }}">
+                            {% else %}
+                                <img src="https://picsum.photos/seed/{{ property.pk }}/400/300.jpg" class="card-img-top property-image" alt="{{ property.title }}">
+                            {% endif %}
+                            <div class="position-absolute top-0 end-0 p-2">
+                                <span class="badge bg-danger">Liked</span>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <h5 class="card-title">{{ property.title }}</h5>
+                            <p class="card-text text-muted">
+                                <i class="fas fa-map-marker-alt"></i> {{ property.city }}, {{ property.country }}
+                            </p>
+                            <p class="card-text">{{ property.description|truncatewords:15 }}</p>
+                            <div class="mb-2">
+                                <span class="badge bg-secondary">{{ property.get_property_type_display }}</span>
+                                <span class="badge bg-info">{{ property.bedrooms }} beds</span>
+                                <span class="badge bg-info">{{ property.bathrooms }} baths</span>
+                                {% if property.state %}
+                                    <span class="badge bg-warning">{{ property.state }}</span>
+                                {% endif %}
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="h5 text-danger mb-0">${{ property.price_per_night }}/night</span>
+                                <small class="text-muted">
+                                    <i class="fas fa-star text-warning"></i>
+                                    {{ property.average_rating|floatformat:1 }}
+                                    ({{ property.main_reviews_count }} reviews)
+                                </small>
+                            </div>
+                            <div class="d-flex gap-2 mt-3">
+                                <a href="{% url 'property_detail' property.pk %}" class="btn btn-outline-primary flex-fill">View Details</a>
+                                <button class="btn btn-outline-danger" onclick="toggleLike('{{ property.id }}')">
+                                    <i class="fas fa-heart"></i> Remove
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="text-center py-5">
+            <div class="rounded-circle bg-light d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 120px; height: 120px;">
+                <i class="fas fa-heart fa-3x text-muted"></i>
+            </div>
+            <h3 class="text-muted mb-3">You haven't liked any properties yet</h3>
+            <p class="text-muted mb-4">
+                {% if is_host %}
+                    Start exploring and like properties that interest you, or check your host dashboard to see likes on your properties!
+                {% else %}
+                    Start exploring and like properties that interest you!
+                {% endif %}
+            </p>
+            <a href="{% url 'property_list' %}" class="btn btn-danger btn-lg">Browse Properties</a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleLike(propertyId) {
+    fetch('/property/' + propertyId + '/like/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (!data.is_liked) {
+            location.reload();
+        }
+    });
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+{% endblock %}

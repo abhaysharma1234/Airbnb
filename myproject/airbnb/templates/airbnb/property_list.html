@@ -1,0 +1,197 @@
+{% extends 'airbnb/base.html' %}
+
+{% block title %}Explore Properties - Airbnb Clone{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h2 mb-0">Explore Properties</h1>
+        <div class="d-flex gap-2">
+            <select class="form-select" style="width: auto;">
+                <option>Price: Low to High</option>
+                <option>Price: High to Low</option>
+                <option>Rating</option>
+            </select>
+        </div>
+    </div>
+    
+    <!-- Search Form -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="GET" id="searchForm">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <input type="text" name="q" class="form-control" placeholder="Search properties..." value="{{ query }}">
+                    </div>
+                    <div class="col-md-3">
+                        <input type="text" name="city" class="form-control" placeholder="City" value="{{ city }}">
+                    </div>
+                    <div class="col-md-3">
+                        <select name="property_type" class="form-select">
+                            <option value="">All Types</option>
+                            <option value="apartment" {% if property_type == 'apartment' %}selected{% endif %}>Apartment</option>
+                            <option value="house" {% if property_type == 'house' %}selected{% endif %}>House</option>
+                            <option value="condo" {% if property_type == 'condo' %}selected{% endif %}>Condo</option>
+                            <option value="villa" {% if property_type == 'villa' %}selected{% endif %}>Villa</option>
+                            <option value="studio" {% if property_type == 'studio' %}selected{% endif %}>Studio</option>
+                        </select>
+                    </div>
+                    <div class="col-md-auto">
+                        <button type="submit" class="btn btn-airbnb">
+                            <i class="fas fa-search"></i> Search
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    {% if query or city or property_type %}
+        <p class="text-muted mb-4">Found {{ page_obj.paginator.count }} properties matching your search</p>
+    {% endif %}
+    
+    <div class="row">
+        {% for property in page_obj %}
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="property-card">
+                    <div class="property-image-container">
+                        {% if property.image %}
+                            <img src="{{ property.image.url }}" class="property-image" alt="{{ property.title }}">
+                        {% else %}
+                            <img src="https://picsum.photos/seed/{{ property.pk }}/400/300.jpg" class="property-image" alt="{{ property.title }}">
+                        {% endif %}
+                        {% if user.is_authenticated %}
+                            <button class="like-btn {% if property.id in liked_properties %}liked{% endif %}" onclick="toggleLike('{{ property.id }}')">
+                                <i class="{% if property.id in liked_properties %}fas{% else %}far{% endif %} fa-heart"></i>
+                            </button>
+                        {% endif %}
+                    </div>
+                    <div class="card-body p-3">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h6 class="property-title">{{ property.title }}</h6>
+                            {% if property.average_rating > 0 %}
+                                <div class="property-rating">
+                                    <i class="fas fa-star star-rating"></i>
+                                    <span>{{ property.average_rating|floatformat:1 }}</span>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <p class="text-muted small mb-2">
+                            <i class="fas fa-map-marker-alt"></i> {{ property.city }}, {{ property.country }}
+                        </p>
+                        <p class="text-muted small mb-2">{{ property.description|truncatewords:10 }}</p>
+                        <div class="d-flex gap-2 mb-2">
+                            <span class="badge bg-light text-dark">{{ property.get_property_type_display }}</span>
+                            <span class="badge bg-light text-dark">{{ property.bedrooms }} bed{{ property.bedrooms|pluralize }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="property-price">
+                                ${{ property.price_per_night }}<span class="text-muted fw-normal"> / night</span>
+                            </div>
+                            <a href="{% url 'property_detail' property.pk %}" class="btn btn-sm btn-outline-airbnb">View</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% empty %}
+            <div class="col-12 text-center">
+                <p class="text-muted">No properties available.</p>
+            </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if page_obj.has_other_pages %}
+        <nav aria-label="Property pagination" class="mt-5">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">Previous</span>
+                    </li>
+                {% endif %}
+
+                {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ num }}</span>
+                        </li>
+                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">Next</span>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+    {% endif %}
+
+    {% if not page_obj %}
+        <div class="text-center py-5">
+            <div class="rounded-circle bg-light d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 120px; height: 120px;">
+                <i class="fas fa-search fa-3x text-muted"></i>
+            </div>
+            <h3 class="text-muted mb-3">No properties found</h3>
+            <p class="text-muted mb-4">Try adjusting your search criteria or browse all properties.</p>
+            <a href="{% url 'property_list' %}" class="btn btn-airbnb">Browse All Properties</a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleLike(propertyId) {
+    fetch('/property/' + propertyId + '/like/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        const likeBtn = document.querySelector(`button[onclick="toggleLike('${propertyId}')"]`);
+        const heartIcon = likeBtn.querySelector('i');
+        
+        if (data.is_liked) {
+            heartIcon.classList.add('fas');
+            heartIcon.classList.remove('far');
+            likeBtn.classList.add('liked');
+        } else {
+            heartIcon.classList.remove('fas');
+            heartIcon.classList.add('far');
+            likeBtn.classList.remove('liked');
+        }
+    });
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+{% endblock %}

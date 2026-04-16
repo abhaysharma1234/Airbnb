@@ -1,0 +1,71 @@
+{% extends 'airbnb/base.html' %}
+
+{% block title %}My Properties - Airbnb Clone{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>My Properties</h1>
+        <a href="{% url 'property_create' %}" class="btn btn-danger">
+            <i class="fas fa-plus"></i> Add New Property
+        </a>
+    </div>
+
+    {% if properties %}
+        <div class="row">
+            {% for property in properties %}
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card property-card h-100">
+                        <div class="position-relative">
+                            {% if property.image %}
+                                <img src="{{ property.image.url }}" class="card-img-top property-image" alt="{{ property.title }}">
+                            {% else %}
+                                <img src="https://picsum.photos/seed/{{ property.pk }}/400/300.jpg" class="card-img-top property-image" alt="{{ property.title }}">
+                            {% endif %}
+                            <div class="position-absolute top-0 end-0 p-2">
+                                <span class="badge {% if property.is_available %}bg-success{% else %}bg-danger{% endif %}">
+                                    {% if property.is_available %}Available{% else %}Unavailable{% endif %}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <h5 class="card-title">{{ property.title }}</h5>
+                            <p class="card-text text-muted">
+                                <i class="fas fa-map-marker-alt"></i> {{ property.city }}, {{ property.country }}
+                            </p>
+                            <p class="card-text">{{ property.description|truncatewords:10 }}</p>
+                            <div class="mb-2">
+                                <span class="badge bg-secondary">{{ property.get_property_type_display }}</span>
+                                <span class="badge bg-info">{{ property.bedrooms }} beds</span>
+                                <span class="badge bg-info">{{ property.bathrooms }} baths</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <span class="h5 text-danger mb-0">${{ property.price_per_night }}/night</span>
+                                <small class="text-muted">
+                                    <i class="fas fa-star text-warning"></i>
+                                    {{ property.average_rating|floatformat:1 }}
+                                    ({{ property.reviews.count }} reviews)
+                                </small>
+                            </div>
+                            <div class="btn-group w-100" role="group">
+                                <a href="{% url 'property_detail' property.pk %}" class="btn btn-outline-primary">View</a>
+                                <a href="{% url 'property_update' property.pk %}" class="btn btn-outline-warning">Edit</a>
+                                <a href="{% url 'property_delete' property.pk %}" class="btn btn-outline-danger">Delete</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-home fa-4x text-muted mb-3"></i>
+            <h3 class="text-muted">You haven't listed any properties yet</h3>
+            <p class="text-muted">Start by adding your first property to begin hosting.</p>
+            <a href="{% url 'property_create' %}" class="btn btn-danger btn-lg">
+                <i class="fas fa-plus"></i> Add Your First Property
+            </a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

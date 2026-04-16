@@ -1,0 +1,104 @@
+{% extends 'airbnb/base.html' %}
+
+{% block title %}Add Review - Airbnb Clone{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-body">
+                    <h2 class="mb-4">Review {{ property.title }}</h2>
+                    
+                    <div class="mb-4">
+                        {% if property.image %}
+                            <img src="{{ property.image.url }}" class="img-fluid rounded mb-3" alt="{{ property.title }}">
+                        {% else %}
+                            <img src="https://picsum.photos/seed/{{ property.pk }}/400/300.jpg" class="img-fluid rounded mb-3" alt="{{ property.title }}">
+                        {% endif %}
+                        <h5>{{ property.title }}</h5>
+                        <p class="text-muted">{{ property.city }}, {{ property.country }}</p>
+                    </div>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="{{ form.rating.id_for_label }}" class="form-label">Rating</label>
+                            {{ form.rating }}
+                            {% if form.rating.errors %}
+                                <div class="text-danger">
+                                    {{ form.rating.errors }}
+                                </div>
+                            {% endif %}
+                            <small class="text-muted">Rate from 1 to 5 stars</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.comment.id_for_label }}" class="form-label">Your Review</label>
+                            {{ form.comment }}
+                            {% if form.comment.errors %}
+                                <div class="text-danger">
+                                    {{ form.comment.errors }}
+                                </div>
+                            {% endif %}
+                            <small class="text-muted">Share your experience with this property</small>
+                        </div>
+                        
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-danger">Submit Review</button>
+                            <a href="{% url 'property_detail' property.pk %}" class="btn btn-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<style>
+.form-control {
+    border-radius: 8px;
+    padding: 12px;
+    border: 1px solid #ddd;
+}
+.form-control:focus {
+    border-color: #dc3545;
+    box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+}
+</style>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const ratingInput = document.querySelector('input[name="rating"]');
+    const form = ratingInput.closest('form');
+    
+    // Add star rating display
+    const starContainer = document.createElement('div');
+    starContainer.className = 'mb-3';
+    starContainer.innerHTML = '<div class="star-rating"></div>';
+    ratingInput.parentNode.insertBefore(starContainer, ratingInput);
+    ratingInput.style.display = 'none';
+    
+    const stars = starContainer.querySelector('.star-rating');
+    
+    function updateStars(rating) {
+        stars.innerHTML = '';
+        for (let i = 1; i <= 5; i++) {
+            const star = document.createElement('i');
+            star.className = i <= rating ? 'fas fa-star text-warning' : 'far fa-star text-warning';
+            star.style.cursor = 'pointer';
+            star.style.fontSize = '24px';
+            star.style.marginRight = '5px';
+            star.addEventListener('click', () => {
+                ratingInput.value = i;
+                updateStars(i);
+            });
+            stars.appendChild(star);
+        }
+    }
+    
+    updateStars(ratingInput.value || 0);
+});
+</script>
+{% endblock %}

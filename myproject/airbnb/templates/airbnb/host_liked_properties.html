@@ -1,0 +1,102 @@
+{% extends 'airbnb/base.html' %}
+
+{% block title %}Liked Properties - Host Dashboard{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-heart text-danger"></i> Liked Properties</h2>
+                <span class="badge bg-danger">{{ likes.count }} Total Likes</span>
+            </div>
+
+            {% if likes %}
+                <!-- Statistics -->
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <h4 class="text-primary">{{ likes.count }}</h4>
+                                <p class="mb-0">Total Likes</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <h4 class="text-success">{{ host_properties.count }}</h4>
+                                <p class="mb-0">Your Properties</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <h4 class="text-warning">
+                                    {% if host_properties.count > 0 %}
+                                        {% widthratio likes.count host_properties.count 1 %}%
+                                    {% else %}
+                                        0
+                                    {% endif %}
+                                </h4>
+                                <p class="mb-0">Avg Likes/Property</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Likes List -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Recent Likes on Your Properties</h5>
+                    </div>
+                    <div class="card-body">
+                        {% for like in likes %}
+                            <div class="d-flex align-items-center p-3 border-bottom">
+                                {% if like.property.image %}
+                                    <img src="{{ like.property.image.url }}" class="rounded me-3" style="width: 80px; height: 60px; object-fit: cover;" alt="{{ like.property.title }}">
+                                {% else %}
+                                    <img src="https://picsum.photos/seed/{{ like.property.pk }}/80/60.jpg" class="rounded me-3" style="width: 80px; height: 60px; object-fit: cover;" alt="{{ like.property.title }}">
+                                {% endif %}
+                                
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-1">
+                                        <a href="{% url 'property_detail' like.property.pk %}" class="text-decoration-none">
+                                            {{ like.property.title }}
+                                        </a>
+                                    </h6>
+                                    <p class="text-muted small mb-1">
+                                        <i class="fas fa-map-marker-alt"></i> {{ like.property.city }}, {{ like.property.country }}
+                                    </p>
+                                    <p class="text-muted small mb-0">
+                                        <i class="fas fa-user"></i> Liked by {{ like.user.username }} 
+                                        <span class="ms-2"><i class="fas fa-clock"></i> {{ like.created_at|date:"M d, Y H:i" }} IST</span>
+                                    </p>
+                                </div>
+                                
+                                <div class="text-end">
+                                    <span class="badge bg-success">${{ like.property.price_per_night }}/night</span>
+                                    <div class="mt-1">
+                                        <a href="{% url 'property_detail' like.property.pk %}" class="btn btn-sm btn-outline-primary">View</a>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+            {% else %}
+                <div class="text-center py-5">
+                    <div class="rounded-circle bg-light d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 120px; height: 120px;">
+                        <i class="fas fa-heart fa-3x text-muted"></i>
+                    </div>
+                    <h3 class="text-muted mb-3">No likes yet</h3>
+                    <p class="text-muted mb-4">Your properties haven't received any likes yet. Keep promoting them to get more visibility!</p>
+                    <a href="{% url 'my_properties' %}" class="btn btn-danger">View Your Properties</a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

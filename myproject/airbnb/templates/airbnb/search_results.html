@@ -1,0 +1,164 @@
+{% extends 'airbnb/base.html' %}
+
+{% block title %}Search Results - Airbnb Clone{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <h1 class="mb-4">Search Results</h1>
+    
+    <!-- Search Form -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="GET" action="{% url 'search_properties' %}">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <input type="text" name="q" class="form-control" placeholder="Search properties..." value="{{ query }}">
+                    </div>
+                    <div class="col-md-3">
+                        <input type="text" name="city" class="form-control" placeholder="City" value="{{ city }}">
+                    </div>
+                    <div class="col-md-3">
+                        <select name="property_type" class="form-select">
+                            <option value="">All Types</option>
+                            <option value="apartment" {% if property_type == 'apartment' %}selected{% endif %}>Apartment</option>
+                            <option value="house" {% if property_type == 'house' %}selected{% endif %}>House</option>
+                            <option value="condo" {% if property_type == 'condo' %}selected{% endif %}>Condo</option>
+                            <option value="villa" {% if property_type == 'villa' %}selected{% endif %}>Villa</option>
+                            <option value="studio" {% if property_type == 'studio' %}selected{% endif %}>Studio</option>
+                        </select>
+                    </div>
+                    <div class="col-md-auto">
+                        <button type="submit" class="btn btn-airbnb">
+                            <i class="fas fa-search"></i> Search
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Results -->
+    {% if page_obj %}
+        <p class="text-muted mb-4">Found {{ page_obj.paginator.count }} properties</p>
+        
+        <div class="row">
+            {% for property in page_obj %}
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card property-card h-100">
+                        <div class="position-relative">
+                            {% if property.image %}
+                                <img src="{{ property.image.url }}" class="card-img-top property-image" alt="{{ property.title }}">
+                            {% else %}
+                                <img src="https://picsum.photos/seed/{{ property.pk }}/400/300.jpg" class="card-img-top property-image" alt="{{ property.title }}">
+                            {% endif %}
+                            {% if user.is_authenticated %}
+                                <button class="like-btn {% if property.id in liked_properties %}liked{% endif %}" 
+                                        onclick="toggleLike('{{ property.id }}')">
+                                    <i class="fas fa-heart"></i>
+                                </button>
+                            {% endif %}
+                        </div>
+                        <div class="card-body">
+                            <h5 class="card-title">{{ property.title }}</h5>
+                            <p class="card-text text-muted">
+                                <i class="fas fa-map-marker-alt"></i> {{ property.city }}, {{ property.country }}
+                            </p>
+                            <p class="card-text">{{ property.description|truncatewords:15 }}</p>
+                            <div class="mb-2">
+                                <span class="badge bg-secondary">{{ property.get_property_type_display }}</span>
+                                <span class="badge bg-info">{{ property.bedrooms }} beds</span>
+                                <span class="badge bg-info">{{ property.bathrooms }} baths</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="h5 text-danger mb-0">${{ property.price_per_night }}/night</span>
+                                <small class="text-muted">
+                                    <i class="fas fa-star text-warning"></i>
+                                    {{ property.average_rating|floatformat:1 }}
+                                    ({{ property.reviews.count }} reviews)
+                                </small>
+                            </div>
+                            <a href="{% url 'property_detail' property.pk %}" class="btn btn-outline-danger mt-3 w-100">View Details</a>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <!-- Pagination -->
+        {% if page_obj.has_other_pages %}
+            <nav aria-label="Property pagination">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a>
+                        </li>
+                    {% endif %}
+                    
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ num }}</span>
+                            </li>
+                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        {% endif %}
+    {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-search fa-4x text-muted mb-3"></i>
+            <h3 class="text-muted">No properties found</h3>
+            <p class="text-muted">Try adjusting your search criteria or browse all properties.</p>
+            <a href="{% url 'property_list' %}" class="btn btn-danger">Browse All Properties</a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleLike(propertyId) {
+    fetch('/property/' + propertyId + '/like/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        const likeBtn = document.querySelector('.like-btn');
+        if (data.is_liked) {
+            likeBtn.classList.add('liked');
+        } else {
+            likeBtn.classList.remove('liked');
+        }
+    });
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+{% endblock %}
